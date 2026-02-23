@@ -91,6 +91,53 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Função para atualizar chaves do Arch
+update_arch_keyring() {
+    log_step "PRE" "$TOTAL_STEPS" "Verificar chaves do Arch Linux" "EM ANDAMENTO"
+    print_info "Verificando chaves do Arch Linux..."
+    
+    # Passo 1: Atualizar o pacote archlinux-keyring
+    if sudo pacman -Sy archlinux-keyring --noconfirm >> "$LOG_FILE" 2>&1; then
+        print_success "Pacote archlinux-keyring atualizado"
+    else
+        print_warning "Aviso ao atualizar archlinux-keyring"
+    fi
+    
+    # Passo 2: Sincronizar chaves
+    print_info "Sincronizando chaves do pacman..."
+    if sudo pacman-key --init >> "$LOG_FILE" 2>&1; then
+        print_info "Chaves inicializadas"
+    fi
+    
+    if sudo pacman-key --populate archlinux >> "$LOG_FILE" 2>&1; then
+        print_success "Chaves do Arch Linux populadas/sincronizadas"
+        log_step "PRE" "$TOTAL_STEPS" "Verificar chaves do Arch Linux" "✓ CONCLUÍDO"
+        return 0
+    else
+        log_step "PRE" "$TOTAL_STEPS" "Verificar chaves do Arch Linux" "⚠ Com avisos"
+        print_warning "Aviso ao popular chaves, tentando atualizar keyring..."
+        
+        # Tentar solucionar problemas comuns
+        if sudo pacman -Scc --noconfirm >> "$LOG_FILE" 2>&1; then
+            print_info "Cache pacman limpo"
+        fi
+        
+        # Tentar novamente
+        if sudo pacman -Sy archlinux-keyring --noconfirm >> "$LOG_FILE" 2>&1; then
+            print_success "Chaves do Arch Linux atualizadas (após limpeza)"
+            return 0
+        else
+            print_warning "Falha ao atualizar chaves (continuando mesmo assim...)"
+            echo -e "${YELLOW}⚠ Se tiver problemas depois, execute:${NC}"
+            echo "  sudo pacman-key --init"
+            echo "  sudo pacman-key --populate archlinux"
+            echo "  sudo pacman -Sy archlinux-keyring"
+            return 1
+        fi
+    fi
+}
+
+
 # Função para executar com timeout e log
 run_script() {
     local script=$1
@@ -154,6 +201,12 @@ echo -e "${CYAN}  Log: $LOG_FILE${NC}"
 echo -e "${CYAN}═════════════════════════════════════════════════════════${NC}"
 echo ""
 
+print_header "� VERIFICAÇÃO PRÉ-INSTALAÇÃO"
+
+print_info "Verificando integridade das chaves do Arch Linux...\\nIsso é importante para evitar problemas na instalação."
+update_arch_keyring
+echo ""
+
 print_header "📋 PLANEJAMENTO DE INSTALAÇÃO"
 
 echo -e "${YELLOW}Este script irá executar:${NC}"
@@ -161,6 +214,7 @@ echo "  1️⃣  Verificar pré-requisitos do sistema"
 echo "  2️⃣  Detectar distribuição (Arch/Manjaro)"
 echo "  3️⃣  Remover bloatware (se Manjaro)"
 echo "  4️⃣  Atualizar sistema"
+echo "  4️⃣.5️⃣ Verificar chaves do Arch Linux"
 echo "  5️⃣  Instalar Terminal (Alacritty + Zsh + Powerlevel10k)"
 echo "  6️⃣  Instalar/atualizar packages"
 echo "  7️⃣  Aplicar configurações"
@@ -258,6 +312,15 @@ else
     log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Atualizar sistema" "⚠ Avisos"
     print_warning "Atualização do sistema teve avisos (veja log)"
 fi
+
+# ====================================
+# PASSO 4.5: VERIFICAR CHAVES DO ARCH
+# ====================================
+
+echo ""
+print_info "Verificando integridade do keyring do Arch Linux..."
+update_arch_keyring
+echo ""
 
 # ====================================
 # PASSO 5: INSTALAR TERMINAL

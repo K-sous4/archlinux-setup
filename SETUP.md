@@ -338,12 +338,14 @@ O script `auto-setup.sh` executa tudo na ordem correta automaticamente:
 
 | Ordem | Script | Descrição | Dependência |
 |-------|--------|-----------|------------|
+| 0️⃣ | keyring check (inline) | Verifica chaves do Arch Linux | Nenhuma (crítico: very first) |
 | 1️⃣ | `check-prerequisites.sh` | Verifica essenciais do sistema | Nenhuma (crítico: first) |
 | 2️⃣ | `detect-distro` (inline) | Detecta Arch/Manjaro | check-prerequisites ✓ |
 | 3️⃣ | `debloat-manjaro.sh` | Remove bloatware (se Manjaro) | detect-distro ✓ (opcional) |
 | 4️⃣ | `pacman -Syu` (inline) | Atualiza sistema | check-prerequisites ✓ |
+| 4️⃣.5️⃣ | keyring check second (inline) | Re-verifica chaves pós-update | pacman update ✓ |
 | 5️⃣ | `install-terminal.sh` | Alacritty + Zsh + P10k | pacman update ✓, sudo ✓ |
-| 6️⃣ | `install-packages.sh` | Instala packages salvos | pacman update ✓, sudo ✓ |
+| 6️⃣ | `install-packages.sh` | Instala packages salvos | pacman update ✓, sudo ✓, keyring ✓ |
 | 7️⃣ | `setup.sh` (inline) | Aplica configurações | install-terminal ✓ |
 
 **Tempo total:** ~30-90 minutos (varia com internet)
@@ -379,15 +381,39 @@ tail -f .setup-logs/auto-setup_*.log        # Log detalhado
 
 **Ordem CORRETA:**
 ```bash
-✓ check-prerequisites → detectar distro → debloat → atualizar → instalar terminal → packages → configs
+✓ KEYRING check → check-prerequisites → detectar distro → debloat → atualizar → KEYRING check 2 → instalar terminal → packages → configs
 ```
 
 **Ordem ERRADA (evitar):**
 ```bash
-✗ install-terminal sem check-prerequisites (faltam essenciais)
-✗ install-packages sem atualizar pacman  (versões incompatíveis)
-✗ setup.sh sem install-terminal (faltam shells/dotfiles)
-✗ Docker antes de install-terminal (pode faltar essenciais)
+✗ install-terminal sem KEYRING check (assinatura de pacote falha)
+✗ install-packages sem KEYRING check (pacotes não autenticam)
+✗ check-prerequisites sem KEYRING (faltam chaves para instalar essenciais)
+```
+
+### 🔐 Verificação de Chaves do Arch Linux
+
+O `auto-setup.sh` verifica as chaves do Arch **DUAS VEZES**:
+1. **No início:** Antes de instalar qualquer coisa
+2. **Após atualizar:** Após `pacman -Syu`
+
+**Isso evita:**
+- `error:Signature from "Usuario <usuario@mail>" is marginal trust`
+- `error:Package (xxxxxxx) may be corrupted`
+- Problemas na instalação de packages
+
+**Se ainda tiver problemas com chaves:**
+```bash
+# Solução manual
+sudo pacman-key --init
+sudo pacman-key --populate archlinux
+sudo pacman -Sy archlinux-keyring
+sudo pacman-key --refresh-keys
+
+# Se persistir (nuclear option - último recurso)
+sudo rm -rf /etc/pacman.d/gnupg
+sudo pacman-key --init
+sudo pacman-key --populate archlinux
 ```
 
 ### 🔧 Executar Scripts Individuais
