@@ -1,0 +1,47 @@
+# Environment variables e secrets
+.env
+.env.local
+config-local.env
+
+# Arquivos temporários
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Caches
+.cache/
+*.cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Backups automáticos
+*.bak
+*.backup
+
+# Variáveis sensíveis nos dotfiles
+**/.*_private
+.ssh/
+.gnupg/
+
+# Node modules e pacotes
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Arquivos de sincronização pessoais
+sync-notes.txt
+personal-config.txt

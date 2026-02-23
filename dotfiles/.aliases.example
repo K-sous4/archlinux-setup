@@ -1,0 +1,103 @@
+# Common aliases for bash/zsh
+# Add these to your .bashrc or .zshrc
+
+# Navigation
+alias home='cd ~'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias cd..='cd ..'
+
+# Listing
+alias ls='ls --color=auto'
+alias ll='ls -lah'
+alias la='ls -lA'
+alias l='ls -CF'
+alias lh='ls -lh'
+alias lah='ls -lah'
+
+# Directory operations
+alias mkdir='mkdir -pv'
+alias cp='cp -v'
+alias mv='mv -v'
+alias rm='rm -v'
+
+# System information
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+alias top='htop'
+alias ps='ps aux'
+
+# Network
+alias ping='ping -c 5'
+alias ipa='ip addr'
+alias ipr='ip route'
+alias ports='netstat -tuln'
+
+# File operations
+alias grep='grep --color=auto'
+alias less='less -R'
+alias tar='tar -v'
+alias wget='wget -c'
+
+# Editor shortcuts
+alias nano='nano -w'
+alias vim='nvim'
+alias vi='vim'
+
+# Package management (Arch Linux)
+alias pm-update='sudo pacman -Syu'
+alias pm-install='sudo pacman -S'
+alias pm-search='pacman -Ss'
+alias pm-remove='sudo pacman -R'
+alias pm-clean='sudo pacman -Scc'
+alias pm-list='pacman -Q'
+alias pm-aur='yay'
+
+# Git shortcuts
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit -m'
+alias gp='git push'
+alias gl='git log --oneline'
+alias gd='git diff'
+
+# Terminal
+alias cl='clear'
+alias reload='source ~/.bashrc'  # or ~/.zshrc depending on shell
+
+# Useful functions
+mkcd() {
+    mkdir -p "$@" && cd "$_"
+}
+
+extract() {
+    if [ -f $1 ]; then
+        case $1 in
+            *.tar.bz2)   tar xjf $1   ;;
+            *.tar.gz)    tar xzf $1   ;;
+            *.bz2)       bunzip2 $1   ;;
+            *.rar)       unrar e $1   ;;
+            *.gz)        gunzip $1    ;;
+            *.tar)       tar xf $1    ;;
+            *.tbz2)      tar xjf $1   ;;
+            *.tgz)       tar xzf $1   ;;
+            *.zip)       unzip $1     ;;
+            *.Z)         uncompress $1;;
+            *)           echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# Find shortcuts
+findlargest() {
+    find . -type f -exec ls -lh {} \; | awk '{print $9, $5}' | sort -k2 -hr | head -20
+}
+
+# Disk usage
+diskusage() {
+    du -sh /* 2>/dev/null | sort -hr
+}
