@@ -213,6 +213,61 @@ chmod +x scripts/*.sh
 - [TERMINAL_SETUP.md](TERMINAL_SETUP.md) - Setup manual de Powerlevel10k
 - [scripts/README.md](scripts/README.md) - Documentação de todos os scripts
 
+# 🐧 Arch Linux / Manjaro Setup Repository
+
+Automatize setup, configurações e sincronize aplicativos entre múltiplos PCs.
+
+## ⚡ Início Rápido
+
+```bash
+git clone https://github.com/K-sous4/archlinux-setup.git
+cd archlinux-setup
+chmod +x scripts/*.sh && bash scripts/auto-setup.sh
+```
+
+O auto-setup detecta Arch/Manjaro, remove bloatware, instala Alacritty + Zsh + Powerlevel10k, e restaura tudo automaticamente.
+
 ---
 
-**Mantém seu Arch Linux sincronizado! 🎉**
+## 📖 Documentação Única
+
+**[SETUP.md](SETUP.md)** — Guia completo com todos os scripts, fluxos e troubleshooting
+
+---
+
+## 🎯 O Que Faz
+
+- ✅ Auto-setup completo (1 comando)
+- ✅ Terminal moderno (Alacritty + Zsh + Powerlevel10k)
+- ✅ Debloat Manjaro (remove pré-instalados desnecessários)
+- ✅ Gerenciar packages (exporte e sincronize entre PCs)
+- ✅ Sincronizar dotfiles e configurações via Git
+
+---
+
+## 🚀 Comandos Principais
+
+```bash
+# Setup automático (recomendado)
+bash scripts/auto-setup.sh
+
+# Atalhos disponíveis
+bash makefile.sh help           # Ver todos
+bash makefile.sh export         # Exportar apps
+bash makefile.sh install        # Instalar apps
+bash makefile.sh commit         # Commit + push
+bash makefile.sh status         # Ver mudanças
+```
+
+---
+
+## 📁 Diretórios
+
+- `scripts/` - Todos os scripts de automação
+- `dotfiles/` - .bashrc, .zshrc, .aliases
+- `configs/` - Configurações de aplicações (alacritty, etc)
+- `packages/` - Listas de pacotes (pacman, aur, pip)
+
+---
+
+**Documentação completa:** [SETUP.md](SETUP.md)
