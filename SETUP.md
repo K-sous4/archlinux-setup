@@ -13,11 +13,15 @@ chmod +x scripts/*.sh && bash scripts/auto-setup.sh
 ```
 
 O script automaticamente:
+- 🔍 Verifica pré-requisitos do sistema
 - 🔍 Detecta Arch/Manjaro
 - 🧹 Remove bloatware (Manjaro)
 - 🖥️ Instala Alacritty + Zsh + Powerlevel10k
 - 📦 Instala ferramentas modernas
 - ⚙️ Restaura todas as configurações
+- 📊 Gera log completo em `.setup-logs/`
+
+**Tempo:** ~30-90 minutos (depende de internet e packages)
 
 ---
 
@@ -247,7 +251,69 @@ bash makefile.sh clean          # Limpar temporários
 
 ---
 
-## 📁 Estrutura do Repositório
+## � Acompanhamente de Instalação
+
+### Sistema de Logging Automático
+
+`auto-setup.sh` cria logs detalhados durante a execução:
+
+**Arquivos gerados em `.setup-logs/`:**
+1. **Log completo:** `auto-setup_TIMESTAMP.log`
+   - Todos os comandos e saídas
+   - Erros e warnings
+   - Timestamps de cada ação
+
+2. **Progresso:** `setup-progress.txt`
+   - Resumo de cada etapa (1/7, 2/7, etc)
+   - Status: ✓ CONCLUÍDO, ⚠ Avisos, ✗ FALHA
+
+### Monitorar em Tempo Real
+
+```bash
+# Ver log en vivo enquanto executa
+tail -f .setup-logs/auto-setup_*.log
+
+# Ver progresso (em outro terminal)
+watch cat .setup-logs/setup-progress.txt
+
+# Ver status final
+cat .setup-logs/setup-progress.txt
+```
+
+### Exemplo de Saída
+
+```
+=== Auto Setup Progress ===
+Iniciado em: Mon Feb 23 13:30:45 2026
+
+1/7 | Verificar pré-requisitos | ✓ CONCLUÍDO
+2/7 | Detectar distribuição | ✓ Manjaro
+3/7 | Remover bloatware | ✓ CONCLUÍDO
+4/7 | Atualizar sistema | ✓ CONCLUÍDO
+5/7 | Configurar Terminal | ✓ CONCLUÍDO
+6/7 | Instalar packages | ✓ CONCLUÍDO
+7/7 | Aplicar configurações | ✓ CONCLUÍDO
+
+Concluído em: Mon Feb 23 14:15:30 2026
+```
+
+---
+
+## 📋 Ordem de Execução & Dependências
+
+Para entender a ordem correta dos scripts e suas dependências, consulte:
+
+**[scripts/EXECUTION_ORDER.md](scripts/EXECUTION_ORDER.md)**
+
+Este documento detalha:
+- ✓ Hierarquia de dependências
+- ✓ Scripts críticos vs opcionais
+- ✓ Problemas comuns e soluções
+- ✓ Fluxo recomendado para novo PC
+
+**Warning:** Executar Portainer antes de Docker, por exemplo, irá falhar!
+
+---
 
 ```
 archlinux-setup/
