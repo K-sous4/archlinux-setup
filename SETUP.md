@@ -25,6 +25,37 @@ O script automaticamente:
 
 ---
 
+### ⚠️ Sobre Permissões e Sudo
+
+**Responda do jeito que fizer sentido para você:**
+
+1. **Opção 1 (Recomendado): Sem `sudo` no comando**
+   ```bash
+   chmod +x scripts/*.sh
+   bash scripts/auto-setup.sh
+   ```
+   - ✅ Mais seguro (você vê o que será executado com sudo)
+   - ✅ O script pedirá sua senha quando necessário
+   - ⏱️ Geralmente pede senha 1-2 vezes
+   - 📝 Você será perguntado sobre bloatware, packages, etc
+
+2. **Opção 2: Com `sudo` no comando**
+   ```bash
+   sudo bash scripts/auto-setup.sh
+   ```
+   - ❌ Menos seguro (tudo roda como root)
+   - ✅ Não pede confirmação de senha
+   - ⚠️ Você perde as prompts interativas
+
+3. **Opção 3: Sem nenhum chmod (bash importa)**
+   ```bash
+   bash scripts/auto-setup.sh
+   ```
+   - ✅ Funciona igual, sem precisar de chmod
+   - ℹ️ Log salvo em `.setup-logs/`
+
+---
+
 ## 📋 O Que Cada Script Faz
 
 ### `auto-setup.sh` ⭐ (Comece aqui!)
@@ -301,17 +332,127 @@ Concluído em: Mon Feb 23 14:15:30 2026
 
 ## 📋 Ordem de Execução & Dependências
 
-Para entender a ordem correta dos scripts e suas dependências, consulte:
+### ⚡ Auto-Setup (Recomendado)
 
-**[scripts/EXECUTION_ORDER.md](scripts/EXECUTION_ORDER.md)**
+O script `auto-setup.sh` executa tudo na ordem correta automaticamente:
 
-Este documento detalha:
-- ✓ Hierarquia de dependências
-- ✓ Scripts críticos vs opcionais
-- ✓ Problemas comuns e soluções
-- ✓ Fluxo recomendado para novo PC
+| Ordem | Script | Descrição | Dependência |
+|-------|--------|-----------|------------|
+| 1️⃣ | `check-prerequisites.sh` | Verifica essenciais do sistema | Nenhuma (crítico: first) |
+| 2️⃣ | `detect-distro` (inline) | Detecta Arch/Manjaro | check-prerequisites ✓ |
+| 3️⃣ | `debloat-manjaro.sh` | Remove bloatware (se Manjaro) | detect-distro ✓ (opcional) |
+| 4️⃣ | `pacman -Syu` (inline) | Atualiza sistema | check-prerequisites ✓ |
+| 5️⃣ | `install-terminal.sh` | Alacritty + Zsh + P10k | pacman update ✓, sudo ✓ |
+| 6️⃣ | `install-packages.sh` | Instala packages salvos | pacman update ✓, sudo ✓ |
+| 7️⃣ | `setup.sh` (inline) | Aplica configurações | install-terminal ✓ |
 
-**Warning:** Executar Portainer antes de Docker, por exemplo, irá falhar!
+**Tempo total:** ~30-90 minutos (varia com internet)
+
+### 📊 Acompanhando o Progresso
+
+O `auto-setup.sh` gera logs em tempo real:
+
+```bash
+# Ver logs durante execução
+tail -f .setup-logs/setup-progress.txt      # Progresso em tempo real
+tail -f .setup-logs/auto-setup_*.log        # Log detalhado
+```
+
+**Estrutura de logs:**
+```
+.setup-logs/
+├── setup-progress.txt               # Resumo: [1/7] passo | status
+├── auto-setup_20260223_130000.log   # Log completo com timestamps
+└── auto-setup_20260223_135000.log   # Novo log a cada execução
+```
+
+**Exemplo de progresso:**
+```
+1/7 | Verificar pré-requisitos | EM ANDAMENTO
+1/7 | Verificar pré-requisitos | ✓ CONCLUÍDO
+2/7 | Detectar distribuição | EM ANDAMENTO
+2/7 | Detectar distribuição | ✓ Arch Linux
+3/7 | Remover bloatware | ⊘ N/A (Arch)
+```
+
+### ⚠️ Problemas de Dependência
+
+**Ordem CORRETA:**
+```bash
+✓ check-prerequisites → detectar distro → debloat → atualizar → instalar terminal → packages → configs
+```
+
+**Ordem ERRADA (evitar):**
+```bash
+✗ install-terminal sem check-prerequisites (faltam essenciais)
+✗ install-packages sem atualizar pacman  (versões incompatíveis)
+✗ setup.sh sem install-terminal (faltam shells/dotfiles)
+✗ Docker antes de install-terminal (pode faltar essenciais)
+```
+
+### 🔧 Executar Scripts Individuais
+
+Se preferir executar manualmente na ordem correta:
+
+```bash
+# 1. Sempre comece com pré-requisitos
+bash scripts/check-prerequisites.sh
+
+# 2. Detectar e limpar (Manjaro)
+sudo bash scripts/debloat-manjaro.sh
+
+# 3. Atualizar sistema
+sudo pacman -Syu
+
+# 4. Terminal moderno
+sudo bash scripts/install-terminal.sh
+
+# 5. Packages
+sudo bash scripts/install-packages.sh
+
+# 6. Configurações
+bash scripts/setup.sh
+```
+
+---
+
+## 🎯 Verificar Status da Instalação
+
+### Durante execução do auto-setup.sh:
+```bash
+# Terminal 1: Monitorar progresso
+tail -f .setup-logs/setup-progress.txt
+
+# Terminal 2: Ver erros detalhados
+tail -f .setup-logs/auto-setup_*.log | grep ERROR
+```
+
+### Após conclusão:
+```bash
+# Ver resumo completo
+cat .setup-logs/setup-progress.txt
+
+# Ver erros (se houver)
+grep "ERROR\|FAIL" .setup-logs/auto-setup_*.log
+
+# Ver warnings (não-crítico)
+grep "WARNING" .setup-logs/auto-setup_*.log
+```
+
+### Verificar instalação manual:
+```bash
+# Terminal instalado?
+alacritty --version && zsh --version && which p10k
+
+# Docker instalado?
+docker --version && docker-compose --version
+
+# LunarVim instalado?
+nvim +LunarVimVersion
+
+# Portainer rodando?
+docker ps | grep portainer
+```
 
 ---
 

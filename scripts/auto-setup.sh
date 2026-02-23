@@ -53,6 +53,19 @@ print_header() {
     log "INFO" "$1"
 }
 
+progress_bar() {
+    local current=$1
+    local total=$2
+    local width=30
+    local filled=$((current * width / total))
+    local empty=$((width - filled))
+    
+    printf "["
+    printf "%${filled}s" | tr ' ' '='
+    printf "%${empty}s" | tr ' ' '-'
+    printf "] %d/%d\n" "$current" "$total"
+}
+
 print_success() {
     echo -e "${GREEN}✓${NC} $1"
     log "SUCCESS" "$1"
@@ -84,18 +97,31 @@ run_script() {
     local description=$2
     local step=$3
     local total=$4
+    local use_sudo=${5:-false}  # Parâmetro opcional: true para executar com sudo
     
     log_step "$step" "$total" "$description" "INICIANDO"
     
     if [[ -f "$script" ]]; then
-        if bash "$script" 2>> "$LOG_FILE"; then
-            log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
-            print_success "$description"
-            return 0
+        if [[ "$use_sudo" == true ]]; then
+            if sudo bash "$script" 2>> "$LOG_FILE"; then
+                log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
+                print_success "$description"
+                return 0
+            else
+                log_step "$step" "$total" "$description" "✗ FALHA"
+                print_error "$description falhou (veja $LOG_FILE para detalhes)"
+                return 1
+            fi
         else
-            log_step "$step" "$total" "$description" "✗ FALHA"
-            print_error "$description falhou (veja $LOG_FILE para detalhes)"
-            return 1
+            if bash "$script" 2>> "$LOG_FILE"; then
+                log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
+                print_success "$description"
+                return 0
+            else
+                log_step "$step" "$total" "$description" "✗ FALHA"
+                print_error "$description falhou (veja $LOG_FILE para detalhes)"
+                return 1
+            fi
         fi
     else
         log_step "$step" "$total" "$description" "⚠ NÃO ENCONTRADO"
@@ -107,6 +133,19 @@ run_script() {
 # ====================================
 # INÍCIO
 # ====================================
+
+# ====================================
+# INÍCIO
+# ====================================
+
+# Verificar sudo disponível (necessário para vários scripts)
+if ! sudo -n true 2>/dev/null; then
+    print_info "Você será pedido para inserir sua senha para operações privilegiadas"
+    if ! sudo -v; then
+        print_error "Acesso sudo necessário para continuar"
+        exit 1
+    fi
+fi
 
 echo -e "${CYAN}═════════════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  ARCH LINUX / MANJARO - AUTO SETUP${NC}"
@@ -194,7 +233,7 @@ if [[ $IS_MANJARO == true ]]; then
     echo
     
     if [[ $REPLY =~ ^[Ss]$ ]]; then
-        run_script "scripts/debloat-manjaro.sh" "Remover bloatware" "$CURRENT_STEP" "$TOTAL_STEPS" || print_warning "Debloat falhou, continuando..."
+        run_script "scripts/debloat-manjaro.sh" "Remover bloatware" "$CURRENT_STEP" "$TOTAL_STEPS" true || print_warning "Debloat falhou, continuando..."
     else
         log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Remover bloatware" "⊘ Pulado"
         print_info "Bloatware não será removido"
@@ -225,7 +264,7 @@ fi
 # ====================================
 
 CURRENT_STEP=$((CURRENT_STEP + 1))
-run_script "scripts/install-terminal.sh" "Configurar Terminal (Alacritty + Zsh + P10k)" "$CURRENT_STEP" "$TOTAL_STEPS" || print_warning "Terminal setup falhou, continuando..."
+run_script "scripts/install-terminal.sh" "Configurar Terminal (Alacritty + Zsh + P10k)" "$CURRENT_STEP" "$TOTAL_STEPS" true || print_warning "Terminal setup falhou, continuando..."
 
 # ====================================
 # PASSO 6: INSTALAR PACKAGES
@@ -243,7 +282,7 @@ else
     echo
     
     if [[ $REPLY =~ ^[Ss]$ ]]; then
-        run_script "scripts/install-packages.sh" "Instalar packages" "$CURRENT_STEP" "$TOTAL_STEPS" || print_warning "Install packages falhou"
+        run_script "scripts/install-packages.sh" "Instalar packages" "$CURRENT_STEP" "$TOTAL_STEPS" true || print_warning "Install packages falhou"
     else
         log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Instalar packages" "⊘ Pulado"
     fi
