@@ -9,6 +9,17 @@
 
 set -e
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh" 2>/dev/null || true
+
+log "INFO" "═══════════════════════════════════════════════════════════"
+log "INFO" "INICIANDO: install-docker.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "═══════════════════════════════════════════════════════════"
+
 # Cores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,15 +30,18 @@ NC='\033[0m' # No Color
 # Funções de logging
 log_info() {
     echo -e "${BLUE}ℹ${NC} $1"
+    log "INFO" "$1"
 }
 
 log_success() {
     echo -e "${GREEN}✓${NC} $1"
+    log "SUCCESS" "$1"
 }
 
 log_warn() {
     echo -e "${YELLOW}⚠${NC} $1"
-}
+    log "WARNING" "$1"
+}}
 
 log_error() {
     echo -e "${RED}✗${NC} $1"

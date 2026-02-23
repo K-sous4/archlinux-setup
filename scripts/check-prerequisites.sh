@@ -9,6 +9,18 @@
 
 set -e
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh"
+
+# Log início do script
+log "INFO" "═══════════════════════════════════════════════════════════"
+log "INFO" "INICIANDO: check-prerequisites.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "═══════════════════════════════════════════════════════════"
+
 # Cores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -16,21 +28,25 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Funções de logging
+# Funções de logging locais (fallback se LOG_FILE não existir)
 log_info() {
     echo -e "${BLUE}ℹ${NC} $1"
+    log "INFO" "$1"
 }
 
 log_success() {
     echo -e "${GREEN}✓${NC} $1"
+    log "SUCCESS" "$1"
 }
 
 log_warn() {
     echo -e "${YELLOW}⚠${NC} $1"
+    log "WARNING" "$1"
 }
 
 log_error() {
     echo -e "${RED}✗${NC} $1"
+    log "ERROR" "$1"
 }
 
 # Função para detectar distribuição
@@ -55,15 +71,20 @@ install_package() {
     
     if command_exists "$package"; then
         log_success "$package já instalado"
+        log "INFO" "Pacote $package já presente no sistema"
         return 0
     fi
     
     log_info "Instalando $package..."
-    if sudo pacman -S --noconfirm "$package" 2>/dev/null; then
+    log "INFO" "INICIANDO: pacman -S $package"
+    
+    if sudo pacman -S --noconfirm "$package" 2>&1 | tee -a "$LOG_FILE"; then
         log_success "$package instalado com sucesso"
+        log "SUCCESS" "Pacote $package instalado"
         return 0
     else
         log_error "Falha ao instalar $package"
+        log "ERROR" "Falha ao instalar pacote $package"
         return 1
     fi
 }
@@ -98,18 +119,23 @@ check_connectivity() {
 # Função para atualizar sistema
 update_system() {
     log_info "Atualizando sistema..."
+    log "INFO" "INICIANDO: pacman -Syu (isso pode levar vários minutos)"
     
-    sudo pacman -Syu --noconfirm || {
+    if sudo pacman -Syu --noconfirm 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "Sistema atualizado"
+        log "SUCCESS" "pacman -Syu concluído"
+        return 0
+    else
         log_error "Falha ao atualizar sistema"
+        log "ERROR" "pacman -Syu falhou"
         return 1
-    }
-    
-    log_success "Sistema atualizado"
+    fi
 }
 
 # Função para instalar ferramentas essenciais
 install_essentials() {
     log_info "Instalando ferramentas essenciais..."
+    log "INFO" "Ferramentas essenciais: base-devel, git, curl, wget, unzip, openssh, sudo, vi, which"
     
     local essentials=(
         "base-devel"      # Build tools (gcc, make, etc)
@@ -124,17 +150,21 @@ install_essentials() {
     )
     
     for pkg in "${essentials[@]}"; do
+        log "DEBUG" "Verificando pacote essencial: $pkg"
         if ! command_exists "$pkg"; then
             install_package "$pkg" || log_warn "Falha ao instalar $pkg (não crítico)"
         else
             log_success "$pkg já instalado"
         fi
     done
+    
+    log "SUCCESS" "Instalação de ferramentas essenciais concluída"
 }
 
 # Função para instalar ferramentas modernas
 install_modern_tools() {
     log_info "Instalando ferramentas modernas..."
+    log "INFO" "Ferramentas modernas: fzf, ripgrep, fd, bat, exa, htop, neofetch, jq"
     
     local modern_tools=(
         "fzf"             # Fuzzy finder
@@ -148,12 +178,15 @@ install_modern_tools() {
     )
     
     for pkg in "${modern_tools[@]}"; do
+        log "DEBUG" "Verificando ferramenta moderna: $pkg"
         if ! command_exists "$pkg"; then
             install_package "$pkg" || log_warn "Falha ao instalar $pkg (opcional)"
         else
             log_success "$pkg já instalado"
         fi
     done
+    
+    log "SUCCESS" "Instalação de ferramentas modernas concluída"
 }
 
 # Função para verificar variáveis de ambiente
@@ -275,6 +308,11 @@ main() {
     echo -e "${GREEN}✓ Pré-requisitos verificados com sucesso!${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
     echo ""
+    
+    log "INFO" "═══════════════════════════════════════════════════════════"
+    log "SUCCESS" "check-prerequisites.sh CONCLUÍDO COM SUCESSO"
+    log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+    log "INFO" "═══════════════════════════════════════════════════════════"
     
     log_info "Próximas etapas:"
     echo "  1. Executar: bash scripts/install-terminal.sh (opcional - Alacritty + Zsh + P10k)"

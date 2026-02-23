@@ -6,8 +6,20 @@
 
 set -e
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh" 2>/dev/null || true
+
+log "INFO" "═══════════════════════════════════════════════════════════"
+log "INFO" "INICIANDO: install-packages.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "═══════════════════════════════════════════════════════════"
+
 echo "🚀 Iniciando instalação de packages..."
 echo ""
+log "INFO" "Iniciando instalação de packages"
 
 # Detectar distribuição
 if [[ -f /etc/os-release ]]; then

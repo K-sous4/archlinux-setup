@@ -3,6 +3,15 @@
 # Script para fazer backup de configurações principais
 # Uso: bash scripts/backup-configs.sh
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh" 2>/dev/null || true
+
+log "INFO" "Iniciando: backup-configs.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+
 echo "💾 Fazendo backup de configurações..."
 echo ""
 
@@ -11,6 +20,7 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Backup de dotfiles
 echo "📝 Fazendo backup de dotfiles..."
+log "INFO" "Iniciando backup de dotfiles"
 
 # Lista de dotfiles a fazer backup
 DOTFILES=(

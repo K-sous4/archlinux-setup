@@ -6,6 +6,18 @@
 
 set -e
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh"
+
+# Log início do script
+log "INFO" "═══════════════════════════════════════════════════════════"
+log "INFO" "INICIANDO: install-terminal.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "═══════════════════════════════════════════════════════════"
+
 # Cores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,22 +30,27 @@ print_header() {
     echo -e "\n${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${PURPLE}▶ $1${NC}"
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    log "INFO" "▶ $1"
 }
 
 print_success() {
     echo -e "${GREEN}✓${NC} $1"
+    log "SUCCESS" "$1"
 }
 
 print_error() {
     echo -e "${RED}✗${NC} $1"
+    log "ERROR" "$1"
 }
 
 print_warning() {
     echo -e "${YELLOW}⚠${NC} $1"
+    log "WARNING" "$1"
 }
 
 print_info() {
     echo -e "${BLUE}ℹ${NC} $1"
+    log "INFO" "$1"
 }
 
 # ====================================
@@ -58,7 +75,8 @@ if command -v alacritty &> /dev/null; then
     print_warning "Alacritty já está instalado"
 else
     print_info "Instalando Alacritty..."
-    pacman -S --noconfirm alacritty
+    log "INFO" "INICIANDO: pacman -S alacritty"
+    pacman -S --noconfirm alacritty 2>&1 | tee -a "$LOG_FILE"
     print_success "Alacritty instalado"
 fi
 
@@ -124,7 +142,8 @@ if command -v zsh &> /dev/null; then
     print_warning "Zsh já está instalado"
 else
     print_info "Instalando Zsh..."
-    pacman -S --noconfirm zsh
+    log "INFO" "INICIANDO: pacman -S zsh"
+    pacman -S --noconfirm zsh 2>&1 | tee -a "$LOG_FILE"
     print_success "Zsh instalado"
 fi
 
@@ -133,9 +152,10 @@ if [[ -d ~/.oh-my-zsh ]]; then
     print_warning "Oh My Zsh já está instalado"
 else
     print_info "Instalando Oh My Zsh..."
+    log "INFO" "INICIANDO: git clone ohmyzsh repository"
     
     # Usar git para instalar
-    git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh || true
+    git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh 2>&1 | tee -a "$LOG_FILE" || true
     
     # Copiar template padrão se não existir
     if [[ ! -f ~/.zshrc ]]; then
@@ -155,13 +175,16 @@ if [[ -d ~/.oh-my-zsh/custom/themes/powerlevel10k ]]; then
     print_warning "Powerlevel10k já está instalado"
 else
     print_info "Instalando Powerlevel10k..."
+    log "INFO" "INICIANDO: instalação Powerlevel10k"
     
     if pacman -Q powerlevel10k &> /dev/null; then
         print_success "Powerlevel10k instalado (pacman)"
+        log "SUCCESS" "Powerlevel10k encontrado no pacman"
     else
         # Instalar via git
+        log "INFO" "INICIANDO: git clone powerlevel10k repository"
         git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
-            ~/.oh-my-zsh/custom/themes/powerlevel10k
+            ~/.oh-my-zsh/custom/themes/powerlevel10k 2>&1 | tee -a "$LOG_FILE"
         print_success "Powerlevel10k instalado (git)"
     fi
 fi
@@ -175,7 +198,8 @@ print_header "Installation: Zsh Plugins"
 # Syntax highlighting
 if [[ ! -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ]]; then
     print_info "Instalando zsh-syntax-highlighting..."
-    pacman -S --noconfirm zsh-syntax-highlighting || true
+    log "INFO" "INICIANDO: pacman -S zsh-syntax-highlighting"
+    pacman -S --noconfirm zsh-syntax-highlighting 2>&1 | tee -a "$LOG_FILE" || true
     
     # Copiar para oh-my-zsh se necessário
     if [[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
@@ -191,7 +215,8 @@ fi
 # Autosuggestions
 if [[ ! -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions ]]; then
     print_info "Instalando zsh-autosuggestions..."
-    pacman -S --noconfirm zsh-autosuggestions || true
+    log "INFO" "INICIANDO: pacman -S zsh-autosuggestions"
+    pacman -S --noconfirm zsh-autosuggestions 2>&1 | tee -a "$LOG_FILE" || true
     
     if [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
         mkdir -p ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
@@ -313,3 +338,8 @@ echo "  ✓ Ferramentas modernas (fzf, ripgrep, fd, bat, exa, htop, neofetch)"
 echo ""
 
 print_success "Setup de terminal completo! 🚀"
+
+log "INFO" "═══════════════════════════════════════════════════════════"
+log "SUCCESS" "install-terminal.sh CONCLUÍDO COM SUCESSO"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "═══════════════════════════════════════════════════════════"

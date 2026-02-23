@@ -3,6 +3,17 @@
 # Script para exportar lista de packages instalados no Arch Linux
 # Uso: bash scripts/export-packages.sh
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh" 2>/dev/null || true
+
+log "INFO" "═══════════════════════════════════════════════════════════"
+log "INFO" "INICIANDO: export-packages.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "═══════════════════════════════════════════════════════════"
+
 echo "🔍 Exportando packages do Arch Linux..."
 
 # Criar diretório se não existir

@@ -7,6 +7,15 @@
 
 set -e
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh" 2>/dev/null || true
+
+log "INFO" "Iniciando: setup.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+
 # Cores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

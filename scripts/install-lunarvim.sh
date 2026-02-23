@@ -7,6 +7,15 @@
 
 set -e
 
+# ====================================
+# INICIALIZAR LOGGING
+# ====================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_logging.sh" 2>/dev/null || true
+
+log "INFO" "Iniciando: install-lunarvim.sh"
+log "INFO" "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+
 # Cores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,14 +28,17 @@ print_header() {
     echo -e "\n${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${PURPLE}▶ $1${NC}"
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    log "INFO" "▶ $1"
 }
 
 print_success() {
     echo -e "${GREEN}✓${NC} $1"
+    log "SUCCESS" "$1"
 }
 
 print_info() {
     echo -e "${BLUE}ℹ${NC} $1"
+    log "INFO" "$1"
 }
 
 print_warning() {

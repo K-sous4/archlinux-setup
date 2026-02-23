@@ -6,6 +6,31 @@
 # 
 # MODO AUTOMÁTICO: Instala TUDO na primeira execução
 # Se tiver erros, mostra output detalhado
+#
+# ====================================
+# LOGGING DOS SUBSCRIPTS
+# ====================================
+# Variáveis de ambiente exportadas para subscripts:
+#  - LOG_FILE:  Caminho do arquivo de log principal
+#  - LOG_DIR:   Diretório de logs
+#
+# Exemplo de uso em subscripts:
+#
+#   # No início do subscript, opcional - funções de logging
+#   if [[ -z "$LOG_FILE" ]]; then
+#       log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+#   else
+#       log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
+#   fi
+#
+#   # Usar logging
+#   log "INFO: Iniciando processo..."
+#   log "SUCCESS: Instalação completa!"
+#   log "ERROR: Algo deu errado"
+#
+# TODO output dos subscripts será redirecionado automaticamente para:
+#   - STDOUT/STDERR → $LOG_FILE
+#   - Erros críticos → $ERROR_LOG
 
 # MODO: 'auto' (padrão - instala tudo) ou 'interactive' (pergunta tudo)
 AUTO_MODE="${AUTO_MODE:-auto}"
@@ -28,9 +53,16 @@ LOG_FILE="$LOG_DIR/auto-setup_${TIMESTAMP}.log"
 PROGRESS_FILE="$LOG_DIR/setup-progress.txt"
 ERROR_LOG="$LOG_DIR/errors_${TIMESTAMP}.log"
 
-# Criar diretório de logs
+# Criar diretório de logs e inicializar arquivo
 mkdir -p "$LOG_DIR"
 
+# Inicializar log com timestamp
+{
+    echo "═════════════════════════════════════════════════════════"
+    echo "  AUTO SETUP LOG - $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "═════════════════════════════════════════════════════════"
+    echo ""
+} > "$LOG_FILE"
 
 # Função para logar
 log() {
@@ -185,7 +217,8 @@ update_arch_keyring() {
 }
 
 
-# Função para executar com timeout e log
+# Função para executar com timeout e logging completo
+# Os subscripts podem usar LOG_FILE, LOG_DIR e importar funções de logging
 run_script() {
     local script=$1
     local description=$2
@@ -197,24 +230,37 @@ run_script() {
     
     if [[ -f "$script" ]]; then
         local error_output
+        
+        # Log início do subscript
+        log "INFO" "► Executando subscript: $script"
+        
         if [[ "$use_sudo" == true ]]; then
-            if ! error_output=$(sudo bash "$script" 2>&1); then
+            # Executar com sudo, logger completo para arquivo + capturar erro
+            if ! error_output=$(export LOG_FILE="$LOG_FILE" LOG_DIR="$LOG_DIR" && \
+                               sudo -E bash "$script" >> "$LOG_FILE" 2>&1); then
                 log_step "$step" "$total" "$description" "✗ FALHA"
+                log "ERROR" "Subscript falhou: $script (exit code: $?)"
                 store_error "$step" "$description" "$error_output"
                 return 1
             fi
         else
-            if ! error_output=$(bash "$script" 2>&1); then
+            # Executar sem sudo, logger completo para arquivo + capturar erro
+            if ! error_output=$(export LOG_FILE="$LOG_FILE" LOG_DIR="$LOG_DIR" && \
+                               bash "$script" >> "$LOG_FILE" 2>&1); then
                 log_step "$step" "$total" "$description" "✗ FALHA"
+                log "ERROR" "Subscript falhou: $script (exit code: $?)"
                 store_error "$step" "$description" "$error_output"
                 return 1
             fi
         fi
+        
         log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
+        log "INFO" "◄ Subscript concluído com sucesso: $script"
         print_success "$description"
         return 0
     else
         log_step "$step" "$total" "$description" "⚠ NÃO ENCONTRADO"
+        log "ERROR" "Script não encontrado: $script"
         print_warning "Script $script não encontrado"
         return 1
     fi
@@ -237,6 +283,15 @@ if ! sudo -n true 2>/dev/null; then
     fi
 fi
 
+# Log os detalhes iniciais
+log "INFO" "═════════════════════════════════════════════════════════"
+log "INFO" "ARCH LINUX / MANJARO - AUTO SETUP"
+log "INFO" "Iniciado: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "Log: $LOG_FILE"
+log "INFO" "Modo: $AUTO_MODE (INSTALL_ALL=$INSTALL_ALL)"
+log "INFO" "═════════════════════════════════════════════════════════"
+log "INFO" ""
+
 echo -e "${CYAN}═════════════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  ARCH LINUX / MANJARO - AUTO SETUP${NC}"
 echo -e "${CYAN}  Iniciado: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
@@ -244,13 +299,27 @@ echo -e "${CYAN}  Log: $LOG_FILE${NC}"
 echo -e "${CYAN}═════════════════════════════════════════════════════════${NC}"
 echo ""
 
-print_header "� VERIFICAÇÃO PRÉ-INSTALAÇÃO"
+print_header "VERIFICAÇÃO PRÉ-INSTALAÇÃO"
+
+log "INFO" "Iniciando verificação de pré-requisitos..."
 
 print_info "Verificando integridade das chaves do Arch Linux...\\nIsso é importante para evitar problemas na instalação."
 update_arch_keyring
 echo ""
 
 print_header "📋 PLANEJAMENTO DE INSTALAÇÃO"
+
+log "INFO" "Plano de execução:"
+log "INFO" "  1. Verificar pré-requisitos do sistema"
+log "INFO" "  2. Detectar distribuição (Arch/Manjaro)"
+log "INFO" "  3. Remover bloatware (se Manjaro)"
+log "INFO" "  4. Atualizar sistema"
+log "INFO" "  4.5. Verificar chaves do Arch Linux"
+log "INFO" "  5. Instalar Terminal (Alacritty + Zsh + P10k)"
+log "INFO" "  6. Instalar/atualizar packages"
+log "INFO" "  7. Aplicar configurações"
+log "INFO" "Tempo estimado: 30-90 minutos"
+log "INFO" "Modo automático: $INSTALL_ALL"
 
 echo -e "${YELLOW}Este script irá executar:${NC}"
 echo "  1️⃣  Verificar pré-requisitos do sistema"
@@ -272,10 +341,12 @@ if [[ "$INSTALL_ALL" != true ]]; then
     echo
     if [[ ! $REPLY =~ ^[Ss]$ ]]; then
         print_warning "Cancelado pelo usuário"
+        log "WARNING" "Setup cancelado pelo usuário"
         exit 0
     fi
 else
     print_info "Modo automático ativado - iniciando instalação..."
+    log "INFO" "Modo automático ativado - iniciando instalação em breve..."
 fi
 
 # Inicializar arquivo de progresso
@@ -284,14 +355,23 @@ echo "Iniciado em: $(date)" >> "$PROGRESS_FILE"
 echo "Modo: $INSTALL_ALL" >> "$PROGRESS_FILE"
 echo "" >> "$PROGRESS_FILE"
 
+log "INFO" "Inicializando progresso..."
+log "INFO" ""
+
 TOTAL_STEPS=7
 CURRENT_STEP=0
+
+log "INFO" "═════════════════════════════════════════════════════════"
+log "INFO" "INICIANDO 7 PASSOS DE INSTALAÇÃO"
+log "INFO" "═════════════════════════════════════════════════════════"
+log "INFO" ""
 
 # ====================================
 # PASSO 1: VERIFICAR PRÉ-REQUISITOS
 # ====================================
 
 CURRENT_STEP=$((CURRENT_STEP + 1))
+log "INFO" "[$CURRENT_STEP/$TOTAL_STEPS] PASSO 1: Verificar pré-requisitos"
 run_script "scripts/check-prerequisites.sh" "Verificar pré-requisitos" "$CURRENT_STEP" "$TOTAL_STEPS" || true
 
 # ====================================
@@ -434,6 +514,13 @@ fi
 
 echo "" >> "$PROGRESS_FILE"
 echo "Concluído em: $(date)" >> "$PROGRESS_FILE"
+
+log "INFO" ""
+log "INFO" "═════════════════════════════════════════════════════════"
+log "INFO" "SETUP FINALIZADO"
+log "INFO" "Conclusão: $(date '+%Y-%m-%d %H:%M:%S')"
+log "INFO" "═════════════════════════════════════════════════════════"
+log "INFO" ""
 
 # Mostrar resumo de erros (se houver)
 show_error_summary
