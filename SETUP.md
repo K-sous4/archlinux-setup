@@ -27,34 +27,42 @@ O script automaticamente:
 
 ### ⚠️ Sobre Permissões e Sudo
 
+**NOVO: Modo Automático (Padrão)**
+
+O script agora roda em **modo automático** por padrão:
+- ✅ Instala TUDO na primeira execução
+- ✅ Sem perguntas interativas
+- ❌ Sem `sudo` inicial (pede senha apenas quando necessário)
+- 📝 Captura e exibe erros detalhados
+
 **Responda do jeito que fizer sentido para você:**
 
-1. **Opção 1 (Recomendado): Sem `sudo` no comando**
+1. **Opção 1 (Recomendado): Modo automático (PADRÃO)**
    ```bash
    chmod +x scripts/*.sh
    bash scripts/auto-setup.sh
    ```
-   - ✅ Mais seguro (você vê o que será executado com sudo)
-   - ✅ O script pedirá sua senha quando necessário
-   - ⏱️ Geralmente pede senha 1-2 vezes
-   - 📝 Você será perguntado sobre bloatware, packages, etc
+   - ✅ Instala TUDO automaticamente (debloat, packages, terminal, configs)
+   - ✅ Pede senha quando necessário (1-2 vezes)
+   - 📊 Diferencia erros críticos de warnings
+   - 🔴 Se encontrar erro, exibe output detalhado
 
-2. **Opção 2: Com `sudo` no comando**
+2. **Opção 2: Modo interativo (perguntas)**
    ```bash
-   sudo bash scripts/auto-setup.sh
+   chmod +x scripts/*.sh
+   INSTALL_ALL=false bash scripts/auto-setup.sh
    ```
-   - ❌ Menos seguro (tudo roda como root)
-   - ✅ Não pede confirmação de senha
-   - ⚠️ Você perde as prompts interativas
+   - ❓ Pergunta antes de cada operação (debloat? packages?)
+   - ✅ Você controla o que instala
+   - ⏱️ Mais lento (por causa das perguntas)
 
-3. **Opção 3: Sem nenhum chmod (bash importa)**
+3. **Opção 3: Sem chmod (bash importa)**
    ```bash
    bash scripts/auto-setup.sh
    ```
    - ✅ Funciona igual, sem precisar de chmod
    - ℹ️ Log salvo em `.setup-logs/`
 
----
 
 ## 📋 O Que Cada Script Faz
 
@@ -444,7 +452,43 @@ bash scripts/setup.sh
 
 ## 🎯 Verificar Status da Instalação
 
-### Durante execução do auto-setup.sh:
+### 🔍 Verificar Status da Instalação
+
+#### Durante execução do auto-setup.sh:
+```bash
+# Terminal 1: Monitorar progresso
+tail -f .setup-logs/setup-progress.txt
+
+# Terminal 2: Ver erros detalhados em tempo real
+tail -f .setup-logs/errors_*.log
+```
+
+#### Após conclusão:
+```bash
+# Ver resumo completo
+cat .setup-logs/setup-progress.txt
+
+# Ver TODOS os erros capturados (detalhados)
+cat .setup-logs/errors_*.log
+
+# Ver log completo (com timestamps)
+tail -100 .setup-logs/auto-setup_*.log
+```
+
+#### Se instalação teve erros:
+O script exibe automaticamente um resumo no final:
+```
+╔════════════════════════════════════════════╗
+║         ⚠️  ERROS ENCONTRADOS              
+╚════════════════════════════════════════════╝
+```
+
+Cada erro mostra:
+- 📍 **Passo que falhou** (ex: "Instalar packages")
+- 🕐 **Timestamp** (quando aconteceu)
+- 📝 **Output completo do erro**
+
+### 🔧 Modo Interativo vs Automático
 ```bash
 # Terminal 1: Monitorar progresso
 tail -f .setup-logs/setup-progress.txt

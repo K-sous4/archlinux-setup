@@ -3,6 +3,17 @@
 # Auto Setup - Script automático executado após clonar o repositório
 # Uso: bash auto-setup.sh
 # Ou: chmod +x auto-setup.sh && ./auto-setup.sh
+# 
+# MODO AUTOMÁTICO: Instala TUDO na primeira execução
+# Se tiver erros, mostra output detalhado
+
+# MODO: 'auto' (padrão - instala tudo) ou 'interactive' (pergunta tudo)
+AUTO_MODE="${AUTO_MODE:-auto}"
+INSTALL_ALL="${INSTALL_ALL:-true}"  # Instalar todas opções por padrão
+
+# Variável para rastrear se houve erros
+HAS_ERRORS=false
+ERROR_LOG="$LOG_DIR/errors.log"
 
 set -e
 
@@ -15,9 +26,11 @@ LOG_DIR="$SCRIPT_DIR/.setup-logs"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_FILE="$LOG_DIR/auto-setup_${TIMESTAMP}.log"
 PROGRESS_FILE="$LOG_DIR/setup-progress.txt"
+ERROR_LOG="$LOG_DIR/errors_${TIMESTAMP}.log"
 
 # Criar diretório de logs
 mkdir -p "$LOG_DIR"
+
 
 # Função para logar
 log() {
@@ -86,6 +99,40 @@ print_info() {
     log "INFO" "$1"
 }
 
+# Função para capturar e exibir erros detalhados
+store_error() {
+    local step=$1
+    local description=$2
+    local error_output=$3
+    
+    HAS_ERRORS=true
+    
+    echo "" >> "$ERROR_LOG"
+    echo "═══════════════════════════════════════════════════" >> "$ERROR_LOG"
+    echo "Erro em: $description (Passo $step)" >> "$ERROR_LOG"
+    echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')" >> "$ERROR_LOG"
+    echo "═══════════════════════════════════════════════════" >> "$ERROR_LOG"
+    echo "$error_output" >> "$ERROR_LOG"
+    echo "" >> "$ERROR_LOG"
+    
+    print_error "$description falhou"
+}
+
+# Função para exibir todos os erros capturados
+show_error_summary() {
+    if [[ "$HAS_ERRORS" == true ]] && [[ -f "$ERROR_LOG" ]]; then
+        echo ""
+        echo -e "${RED}╔════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}║${NC}         ⚠️  ERROS ENCONTRADOS              "
+        echo -e "${RED}╚════════════════════════════════════════════╝${NC}"
+        echo ""
+        cat "$ERROR_LOG"
+        echo ""
+        echo -e "${YELLOW}💡 Dica: Veja o log completo em: $LOG_FILE${NC}"
+    fi
+}
+
+
 # Função para verificar comando
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -149,27 +196,23 @@ run_script() {
     log_step "$step" "$total" "$description" "INICIANDO"
     
     if [[ -f "$script" ]]; then
+        local error_output
         if [[ "$use_sudo" == true ]]; then
-            if sudo bash "$script" 2>> "$LOG_FILE"; then
-                log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
-                print_success "$description"
-                return 0
-            else
+            if ! error_output=$(sudo bash "$script" 2>&1); then
                 log_step "$step" "$total" "$description" "✗ FALHA"
-                print_error "$description falhou (veja $LOG_FILE para detalhes)"
+                store_error "$step" "$description" "$error_output"
                 return 1
             fi
         else
-            if bash "$script" 2>> "$LOG_FILE"; then
-                log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
-                print_success "$description"
-                return 0
-            else
+            if ! error_output=$(bash "$script" 2>&1); then
                 log_step "$step" "$total" "$description" "✗ FALHA"
-                print_error "$description falhou (veja $LOG_FILE para detalhes)"
+                store_error "$step" "$description" "$error_output"
                 return 1
             fi
         fi
+        log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
+        print_success "$description"
+        return 0
     else
         log_step "$step" "$total" "$description" "⚠ NÃO ENCONTRADO"
         print_warning "Script $script não encontrado"
@@ -221,17 +264,24 @@ echo "  7️⃣  Aplicar configurações"
 echo ""
 echo -e "${CYAN}Tempo estimado: 30-90 minutos${NC}"
 echo ""
+echo -e "${YELLOW}Modo: ${INSTALL_ALL} (automático - instala TUDO)${NC}"
+echo ""
 
-read -p "Continuar? (s/n) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Ss]$ ]]; then
-    print_warning "Cancelado pelo usuário"
-    exit 0
+if [[ "$INSTALL_ALL" != true ]]; then
+    read -p "Continuar? (s/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Ss]$ ]]; then
+        print_warning "Cancelado pelo usuário"
+        exit 0
+    fi
+else
+    print_info "Modo automático ativado - iniciando instalação..."
 fi
 
 # Inicializar arquivo de progresso
 echo "=== Auto Setup Progress ===" > "$PROGRESS_FILE"
 echo "Iniciado em: $(date)" >> "$PROGRESS_FILE"
+echo "Modo: $INSTALL_ALL" >> "$PROGRESS_FILE"
 echo "" >> "$PROGRESS_FILE"
 
 TOTAL_STEPS=7
@@ -283,14 +333,20 @@ CURRENT_STEP=$((CURRENT_STEP + 1))
 if [[ $IS_MANJARO == true ]]; then
     log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Remover bloatware (Manjaro)" "EM ANDAMENTO"
     
-    read -p "Deseja remover aplicações pré-instaladas desnecessárias? (s/n) " -n 1 -r
-    echo
-    
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
-        run_script "scripts/debloat-manjaro.sh" "Remover bloatware" "$CURRENT_STEP" "$TOTAL_STEPS" true || print_warning "Debloat falhou, continuando..."
+    if [[ "$INSTALL_ALL" == true ]]; then
+        print_info "Modo automático: Removendo bloatware..."
+        run_script "scripts/debloat-manjaro.sh" "Remover bloatware" "$CURRENT_STEP" "$TOTAL_STEPS" true || true
     else
-        log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Remover bloatware" "⊘ Pulado"
-        print_info "Bloatware não será removido"
+        # Modo interativo
+        read -p "Deseja remover aplicações pré-instaladas desnecessárias? (s/n) " -n 1 -r
+        echo
+        
+        if [[ $REPLY =~ ^[Ss]$ ]]; then
+            run_script "scripts/debloat-manjaro.sh" "Remover bloatware" "$CURRENT_STEP" "$TOTAL_STEPS" true || true
+        else
+            log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Remover bloatware" "⊘ Pulado"
+            print_info "Bloatware não será removido"
+        fi
     fi
 else
     log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Remover bloatware" "⊘ N/A (Arch)"
@@ -339,15 +395,21 @@ log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Instalar packages" "EM ANDAMENTO"
 if [[ ! -f "packages/pacman-packages.txt" ]]; then
     print_warning "Arquivos de packages não encontrados"
     print_info "Executando export-packages.sh..."
-    run_script "scripts/export-packages.sh" "Exportar lista de packages" "$CURRENT_STEP" "$TOTAL_STEPS" || print_warning "Export falhou"
+    run_script "scripts/export-packages.sh" "Exportar lista de packages" "$CURRENT_STEP" "$TOTAL_STEPS" || true
 else
-    read -p "Deseja reinstalar packages do repositório? (s/n) " -n 1 -r
-    echo
-    
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
-        run_script "scripts/install-packages.sh" "Instalar packages" "$CURRENT_STEP" "$TOTAL_STEPS" true || print_warning "Install packages falhou"
+    if [[ "$INSTALL_ALL" == true ]]; then
+        print_info "Modo automático: Instalando packages..."
+        run_script "scripts/install-packages.sh" "Instalar packages" "$CURRENT_STEP" "$TOTAL_STEPS" true || true
     else
-        log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Instalar packages" "⊘ Pulado"
+        # Modo interativo
+        read -p "Deseja reinstalar packages do repositório? (s/n) " -n 1 -r
+        echo
+        
+        if [[ $REPLY =~ ^[Ss]$ ]]; then
+            run_script "scripts/install-packages.sh" "Instalar packages" "$CURRENT_STEP" "$TOTAL_STEPS" true || true
+        else
+            log_step "$CURRENT_STEP" "$TOTAL_STEPS" "Instalar packages" "⊘ Pulado"
+        fi
     fi
 fi
 
@@ -373,10 +435,17 @@ fi
 echo "" >> "$PROGRESS_FILE"
 echo "Concluído em: $(date)" >> "$PROGRESS_FILE"
 
+# Mostrar resumo de erros (se houver)
+show_error_summary
+
 print_header "✨ SETUP COMPLETO!"
 
 echo -e "${GREEN}═════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  ✓ Instalação finalizada com sucesso!${NC}"
+if [[ "$HAS_ERRORS" == true ]]; then
+    echo -e "${YELLOW}  ⚠️  Instalação finalizada COM ERROS${NC}"
+else
+    echo -e "${GREEN}  ✓ Instalação finalizada com sucesso!${NC}"
+fi
 echo -e "${GREEN}═════════════════════════════════════════════════════════${NC}"
 echo ""
 
@@ -399,5 +468,10 @@ echo "  • Docker & Portainer: ${BLUE}bash scripts/install-docker.sh${NC}"
 echo "                        ${BLUE}bash scripts/install-portainer.sh${NC}"
 echo ""
 
-echo -e "${BLUE}📋 Log completo salvo em: $LOG_FILE${NC}"
-echo -e "${BLUE}📊 Progresso salvo em: $PROGRESS_FILE${NC}"
+echo -e "${BLUE}📋 Logs e Progresso:${NC}"
+echo "  • Log completo: $LOG_FILE"
+echo "  • Progresso: $PROGRESS_FILE"
+if [[ -f "$ERROR_LOG" ]]; then
+    echo "  • Erros: $ERROR_LOG"
+fi
+echo ""
