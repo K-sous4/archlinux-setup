@@ -1,11 +1,23 @@
 #!/bin/bash
 
 # Script para instalar packages salvos
+# Funciona com: Arch Linux, Manjaro
 # Uso: bash scripts/install-packages.sh
 
 set -e
 
-echo "🚀 Iniciando instalação de packages do Arch Linux..."
+echo "🚀 Iniciando instalação de packages..."
+echo ""
+
+# Detectar distribuição
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    DISTRO="$ID"
+else
+    DISTRO="unknown"
+fi
+
+echo "📍 Distribuição: $DISTRO"
 echo ""
 
 # Verificar se tem acesso de root

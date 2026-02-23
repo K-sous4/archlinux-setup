@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Script principal de setup para novo PC com Arch Linux
+# Script principal de setup para novo PC com Arch Linux / Manjaro
 # Este script automatiza o processo de instalação e configuração
+# Suporta: Arch Linux, Manjaro
 # Uso: bash scripts/setup.sh
 
 set -e
@@ -12,6 +13,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Detectar distribuição
+detect_distro() {
+    if [[ -f /etc/os-release ]]; then
+        . /etc/os-release
+        DISTRO="$ID"
+    else
+        DISTRO="unknown"
+    fi
+}
 
 # Funções auxiliares
 print_header() {
@@ -47,11 +58,14 @@ show_menu() {
 # INÍCIO DO SCRIPT
 # ====================================
 
-print_header "ARCH LINUX SETUP - Configuração de Novo PC"
+detect_distro
+
+print_header "ARCH LINUX / MANJARO - Setup de Novo PC"
 
 echo -e "Data: $(date)"
 echo -e "Usuário: $USER"
 echo -e "Shell: $SHELL"
+echo -e "Distribuição: $DISTRO"
 echo ""
 
 # Verificar dependências
@@ -65,10 +79,18 @@ check_dependencies() {
     print_success "git encontrado"
     
     if ! command -v pacman &> /dev/null; then
-        print_error "pacman não encontrado - não está no Arch Linux?"
+        print_error "pacman não encontrado - não está no Arch Linux ou Manjaro?"
         exit 1
     fi
     print_success "pacman encontrado"
+    
+    if [[ "$DISTRO" == "manjaro" ]]; then
+        print_success "Manjaro detectado"
+    elif [[ "$DISTRO" == "arch" ]]; then
+        print_success "Arch Linux detectado"
+    else
+        print_warning "Distribuição desconhecida: $DISTRO (usando modo Arch)"
+    fi
 }
 
 # Função para instalar packages

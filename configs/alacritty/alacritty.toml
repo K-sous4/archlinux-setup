@@ -1,0 +1,208 @@
+# Alacritty Configuration File
+# GPU-accelerated terminal emulator
+# Documentação: https://github.com/alacritty/alacritty
+
+# ==========================================
+# CORES - Catppuccin Mocha (moderno)
+# ==========================================
+colors:
+  # Cores padrão
+  primary:
+    background: '#1e1e2e'
+    foreground: '#cdd6f4'
+    dim_foreground: '#bac2de'
+    bright_foreground: '#f5f5f5'
+
+  # Cores do cursor
+  cursor:
+    text: '#1e1e2e'
+    cursor: '#f5f5f5'
+
+  # Cores de seleção
+  selection:
+    text: '#1e1e2e'
+    background: '#f5c2e7'
+
+  # 16 cores do terminal
+  normal:
+    black:   '#45475a'
+    red:     '#f38181'
+    green:   '#a6e3a1'
+    yellow:  '#f9e2af'
+    blue:    '#89b4fa'
+    magenta: '#f5c2e7'
+    cyan:    '#89dceb'
+    white:   '#bac2de'
+
+  bright:
+    black:   '#585b70'
+    red:     '#f38181'
+    green:   '#a6e3a1'
+    yellow:  '#f9e2af'
+    blue:    '#89b4fa'
+    magenta: '#f5c2e7'
+    cyan:    '#89dceb'
+    white:   '#a6adc8'
+
+  # Cores para URLs/hints
+  hints:
+    foreground: '#1e1e2e'
+    background: '#f9e2af'
+
+# ==========================================
+# FONTE
+# ==========================================
+font:
+  normal:
+    # Use JetBrains Mono, Fira Code ou outra Nerd Font
+    family: "JetBrains Mono"
+    style: Regular
+
+  bold:
+    family: "JetBrains Mono"
+    style: Bold
+
+  italic:
+    family: "JetBrains Mono"
+    style: Italic
+
+  bold_italic:
+    family: "JetBrains Mono"
+    style: Bold Italic
+
+  # Tamanho da fonte em pontos
+  size: 12.0
+
+  # Offset entre linhas
+  offset:
+    x: 0
+    y: 0
+
+  # Suavização de fonte
+  use_thin_strokes: false
+
+# ==========================================
+# SUAVIZAÇÃO (Anti-aliasing)
+# ==========================================
+antialiasing: true
+
+# ==========================================
+# JANELA
+# ==========================================
+window:
+  # Dimensões iniciais
+  dimensions:
+    columns: 120
+    lines: 40
+
+  # Padding interno
+  padding:
+    x: 10
+    y: 10
+
+  # Espaço entre linhas
+  line_length: 80
+
+  # Opacidade (0.0 = transparente, 1.0 = opaco)
+  opacity: 0.95
+
+  # Decorações (full, none)
+  decorations: full
+
+  # Modo de tela inteira (SomeWindows, None)
+  fullscreen: None
+
+  # Alerta do sino
+  bell:
+    animation: EaseOutExpo
+    duration: 0
+
+# ==========================================
+# SCROLL
+# ==========================================
+scrolling:
+  # Número de linhas no histórico
+  history: 10000
+
+  # Multiplicador de scroll
+  multiplier: 3
+
+# ==========================================
+# SELEÇÃO
+# ==========================================
+selection:
+  # Salvar seleção na área de transferência
+  save_to_clipboard: true
+
+  # Semântica de seleção (CellPlus, Cell, Line)
+  semantic_escape_chars: ",│`|:\"' ()\\[]{}<>\\t"
+
+# ==========================================
+# MOUSE
+# ==========================================
+mouse:
+  # Duplo clique seleciona por palavra
+  double_click:
+    threshold: 300
+
+  # Triplo clique seleciona por linha
+  triple_click:
+    threshold: 300
+
+  # Hints para URLs, emails, etc
+  hints:
+    enabled: true
+    launcher:
+      program: firefox
+      args:
+        - "{{ uri }}"
+
+# ==========================================
+# SHELL / PROGRAMA
+# ==========================================
+shell:
+  program: /usr/bin/zsh
+  # Argumentos adicionais
+  args:
+    - --login
+
+# ==========================================
+# ATALHOS DE TECLADO
+# ==========================================
+# Descomente para customizar
+# key_bindings:
+#   - { key: V, mods: Control|Shift, action: Paste }
+#   - { key: C, mods: Control|Shift, action: Copy }
+#   - { key: N, mods: Control|Shift, command: { program: "alacritty", args: [] } }
+
+# ==========================================
+# LIGAÇÕES DE MOUSE
+# ==========================================
+# mouse_bindings:
+#   - { mouse: Right, action: ExpandSelectionToLine }
+
+# ==========================================
+# OUTRAS CONFIGURAÇÕES
+# ==========================================
+
+# Usar arquivo .Xresources/Xft para fontes (X11)
+draw_bold_text_with_bright_colors: false
+
+# Enviador de modo Vi (experimental)
+vi_mode: false
+
+# Usar seleção primária em X11
+enable_experimental_conpty: false
+
+# Temas de cursor
+cursor:
+  style: Block
+  thickness_percentage: ~0
+
+# ==========================================
+# PERFORMANCE
+# ==========================================
+
+# Usar GPU para renderização
+# Deixar para padrão (true) para melhor performance
+render_timer: false

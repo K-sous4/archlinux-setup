@@ -2,61 +2,84 @@
 
 Repositório para sincronizar e replicar configurações, aplicativos e dotfiles do Arch Linux entre diferentes máquinas.
 
+## ⚡ Início Rápido (3 Passos!)
+
+```bash
+git clone https://github.com/K-sous4/archlinux-setup.git
+cd archlinux-setup
+chmod +x scripts/*.sh && bash scripts/auto-setup.sh
+```
+
+**O auto-setup.sh automaticamente:**
+- ✅ Detecta Arch Linux ou Manjaro
+- ✅ Remove bloatware (se Manjaro)
+- ✅ Instala Alacritty + Zsh + Powerlevel10k
+- ✅ Instala ferramentas modernas
+- ✅ Restaura todas as configurações
+
+Veja [AUTO_SETUP.md](AUTO_SETUP.md) para guia completo.
+
+---
+
 ## 📋 Estrutura do Projeto
 
 ```
 .
 ├── README.md                  # Este arquivo
+├── AUTO_SETUP.md              # ⭐ Guia do auto-setup (comece aqui!)
 ├── .gitignore                 # Arquivos ignorados pelo git
 ├── scripts/                   # Scripts de automação
+│   ├── auto-setup.sh          # ⭐ NOVO: Setup automático completo
+│   ├── install-terminal.sh    # ⭐ NOVO: Instala Alacritty + Zsh + P10k
+│   ├── debloat-manjaro.sh     # ⭐ NOVO: Remove bloatware do Manjaro
 │   ├── export-packages.sh     # Exporta lista de packages instalados
 │   ├── install-packages.sh    # Instala packages do arquivo
 │   ├── backup-configs.sh      # Faz backup de configurações
-│   └── setup.sh               # Script principal de setup
+│   ├── setup.sh               # Script principal de setup (menu)
+│   └── README.md              # Documentação dos scripts
 ├── packages/                  # Listas de packages
 │   ├── pacman-packages.txt    # Packages do pacman
 │   ├── aur-packages.txt       # Packages do AUR
 │   └── pip-packages.txt       # Packages do Python (pip)
-├── dotfiles/                  # Arquivos de configuração do terminal/shell
-│   ├── .bashrc
-│   ├── .zshrc
-│   ├── .profile
-│   └── .aliases
+├── dotfiles/                  # Arquivos de configuração do shell
+│   ├── .bashrc.example
+│   ├── .zshrc.example         # ✅ Atualizado com P10k
+│   ├── .aliases.example       # ✅ Atualizado com aliases modernos
+│   └── README.md
 └── configs/                   # Configurações de aplicações
-    ├── alacritty/
+    ├── alacritty/             # ✅ NOVO: Config do Alacritty
     ├── neovim/
     ├── tmux/
-    └── ...
+    └── README.md
 ```
 
-## 🚀 Início Rápido
+## 🚀 Novas Funcionalidades
 
-### Instalação de Ferramentas Recomendadas (Terminal Moderno)
+### ⭐ Auto-Setup (Novo!)
 
-```bash
-# Instalar framework Zsh e tema Powerlevel10k
-sudo pacman -S zsh oh-my-zsh powerlevel10k
-sudo pacman -S zsh-syntax-highlighting zsh-autosuggestions
+Execute `auto-setup.sh` após clonar para:
+- Detectar Arch Linux ou Manjaro automaticamente
+- Opcionalmente remover bloatware (Manjaro)
+- Instalar Alacritty + Zsh + Powerlevel10k
+- Instalar ferramentas modernas (fzf, ripgrep, fd, bat, exa, etc)
+- Restaurar todas as configurações
+- Suporta tanto Arch quanto Manjaro
 
-# AUR helper
-yay -S yay
+Veja [AUTO_SETUP.md](AUTO_SETUP.md) para detalhes completos.
 
-# Utilidades essenciais
-sudo pacman -S fzf ripgrep fd bat exa htop neofetch
+### 🖥️ Terminal Moderno
 
-# Opcional: git, tmux, neovim, etc
-sudo pacman -S git tmux neovim
-```
+Agora inclui setup completo de:
+- **Alacritty** - Terminal GPU acelerado (mais rápido que tudo)
+- **Zsh** - Shell moderno com plugins
+- **Powerlevel10k** - Prompt visual criativo
+- **Ferramentas**: fzf, ripgrep, fd, bat, exa, htop, neofetch
 
-### Após instalação de ferramentas:
+### 🧹 Debloat Manjaro
 
-```bash
-# Configurar Powerlevel10k (recomendado)
-p10k configure
-
-# Definir zsh como shell padrão
-chsh -s /usr/bin/zsh
-```
+Script específico para remover bloatware do Manjaro:
+- Thunderbird, Audacious, KDE extras, etc
+- Mantém sistema limpo e responsivo
 
 ### No PC Original (para exportar configurações):
 
@@ -183,10 +206,12 @@ chmod +x scripts/*.sh
 
 ## 📚 Documentação
 
-- [INIT.md](INIT.md) - Guia de inicialização
-- [QUICKSTART.md](QUICKSTART.md) - Início rápido
-- [WORKFLOW.md](WORKFLOW.md) - Fluxo de sincronização
-- [TERMINAL_SETUP.md](TERMINAL_SETUP.md) - ⭐ Setup Powerlevel10k & Zsh moderno
+- [AUTO_SETUP.md](AUTO_SETUP.md) - ⭐ **Comece aqui!** Guia do auto-setup automático
+- [INIT.md](INIT.md) - Guia de inicialização detalhada
+- [QUICKSTART.md](QUICKSTART.md) - Início rápido (passo-a-passo)
+- [WORKFLOW.md](WORKFLOW.md) - Fluxo de sincronização entre PCs
+- [TERMINAL_SETUP.md](TERMINAL_SETUP.md) - Setup manual de Powerlevel10k
+- [scripts/README.md](scripts/README.md) - Documentação de todos os scripts
 
 ---
 

@@ -1,104 +1,98 @@
 # 🎯 Quick Start Guide
 
-## Para PC novo com Arch Linux
+## ⚡ Mais Rápido: Auto Setup (Recomendado!)
 
-### Passo 1: Clone o repositório
+depois de clonar:
+
+```bash
+# 1. Clonar
+git clone https://github.com/K-sous4/archlinux-setup.git
+cd archlinux-setup
+
+# 2. Preparar
+chmod +x scripts/*.sh
+
+# 3. AUTO SETUP (faz tudo automaticamente!)
+bash scripts/auto-setup.sh
+
+# 4. Novo terminal/shell
+exit
+```
+
+✨ **Pronto!** Terminal configurado com Alacritty, Zsh, Powerlevel10k e ferramentas modernas.
+
+Veja [AUTO_SETUP.md](AUTO_SETUP.md) para detalhes completos.
+
+---
+
+## 🔧 Alternativa: Manual (Passo-a-Passo)
+
+---
+
+## 🔧 Setup Manual (Passo-a-Passo)
+
+Se preferir fazer manualmente:
+
+### Passo 1: Clone
 ```bash
 git clone https://github.com/seu-usuario/archlinux-setup.git
 cd archlinux-setup
-```
-
-### Passo 2: Configure permissões
-```bash
 chmod +x scripts/*.sh
 ```
 
-### Passo 3: Execute instalação completa
+### Passo 2: Terminal Moderno (Alacritty + Zsh + Powerlevel10k)
+```bash
+sudo bash scripts/install-terminal.sh
+```
+
+### Passo 3: Remover Bloatware (só Manjaro)
+```bash
+sudo bash scripts/debloat-manjaro.sh
+```
+
+### Passo 4: Restaurar Tudo
 ```bash
 bash scripts/setup.sh
+# Escolha opção 1 (instalação completa)
 ```
 
-Escolha opção `1` para instalação completa (packages + dotfiles + configs).
-
----
-
-## Para seu PC atual (Arch Linux)
-
-### Passo 1: Exporte configurações
+### Passo 5: Novo Terminal
 ```bash
-# No seu repositório local
-bash scripts/export-packages.sh
-bash scripts/backup-configs.sh
-```
-
-### Passo 2: Revise e commit
-```bash
-git status
-git add .
-git commit -m "Initial setup backup"
-```
-
-### Passo 3: Push para GitHub
-```bash
-git push origin main
+exit
+# ou
+exec zsh
 ```
 
 ---
 
-## Comandos Mais Comuns
+## 📝 Para Seu PC Atual
+
+Exportar e sincronizar suas configurações:
 
 ```bash
-# Exportar após instalar novo package
-bash scripts/export-packages.sh
+# 1. Exportar
+bash makefile.sh export
 
-# Atualizar tudo no novo PC
+# 2. Revisar
+bash makefile.sh status
+
+# 3. Commit e Push
+bash makefile.sh commit
+
+# 4. Em outro PC
 git pull
-sudo bash scripts/install-packages.sh
-
-# Restaurar apenas dotfiles
-bash scripts/setup.sh  # escolha opção 3
-
-# Fazer backup de configurações
-bash scripts/backup-configs.sh
+bash makefile.sh install
 ```
 
 ---
 
-## Estrutura do Repositório
+## 🛠️ Comandos Rápidos
 
+```bash
+bash makefile.sh help        # Ver todos atalhos
+bash makefile.sh export      # Exportar suas configs
+bash makefile.sh install     # Instalar packages
+bash makefile.sh setup       # Menu de setup
+bash makefile.sh status      # Ver mudanças
+bash makefile.sh commit      # Commit + push
 ```
-archlinux-setup/
-├── README.md              ← Documentação completa
-├── QUICKSTART.md          ← Este arquivo
-├── WORKFLOW.md            ← Fluxo detalhado
-├── scripts/
-│   ├── export-packages.sh
-│   ├── install-packages.sh
-│   ├── backup-configs.sh
-│   └── setup.sh
-├── packages/
-│   ├── pacman-packages.txt
-│   ├── aur-packages.txt
-│   └── pip-packages.txt
-├── dotfiles/
-│   ├── .bashrc
-│   ├── .zshrc
-│   └── .aliases
-└── configs/
-    ├── alacritty/
-    ├── nvim/
-    └── tmux/
-```
-
----
-
-## Próximos Passos
-
-1. **Personalizar**: Edite os arquivos conforme suas preferências
-2. **Adicionar**: Inclua mais aplicações e configurações
-3. **Sincronizar**: Use `git push/pull` para manter tudo atualizado
-4. **Documentar**: Mantenha o README atualizado com instruções específicas
-
----
-
-**Pronto para começar! 🚀**
