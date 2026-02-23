@@ -50,6 +50,116 @@ sudo bash scripts/install-terminal.sh
 
 ---
 
+### `install-lunarvim.sh`
+Instala LunarVim - um IDE Neovim com suporte multi-linguagem e keybindings similares ao VS Code.
+
+```bash
+bash scripts/install-lunarvim.sh
+```
+
+**Instala:**
+- Neovim 0.9+ (se não estiver instalado)
+- LunarVim (wrapper moderno do Neovim)
+- Language servers (LSP) para 6 linguagens:
+  - Python (pylsp)
+  - Go (gopls)
+  - C/C++ (clangd)
+  - Java (jdtls)
+  - TypeScript/JavaScript (tsserver)
+  - Shell (bash-language-server)
+- Formatadores: black, prettier, gofmt, clang-format
+- Linters: flake8, eslint, shellcheck
+- Plugins: Comment.nvim, GitHub Copilot, Colorizer, Trouble, Gitsigns
+- DAP (Debug Adapter Protocol) para Python
+
+**Keybindings VS Code-like:**
+- `Ctrl+/` - Toggle comment
+- `Ctrl+S` - Save file
+- `F2` - Rename symbol
+- `F12` - Go to definition
+- `Shift+F12` - Show references
+- `Alt+Up/Down` - Move line
+- `Ctrl+Shift+K` - Delete line
+- `Ctrl+D` - Multi-select word
+
+Configure via `~/.config/nvim/config.lua` ou use comando `:LvimConfig`
+
+---
+
+### `check-prerequisites.sh`
+Verifica e instala pré-requisitos essenciais do sistema antes de qualquer instalação.
+
+```bash
+bash scripts/check-prerequisites.sh
+```
+
+**Verifica:**
+- Distribuição (Arch/Manjaro)
+- Permissões sudo
+- Conectividade internet
+- Espaço em disco (mínimo 5GB)
+- Variáveis de ambiente
+
+**Instala (opcional):**
+- Ferramentas essenciais: git, curl, wget, base-devel
+- Ferramentas modernas: fzf, ripgrep, fd, bat, exa, htop, neofetch
+
+**Use:** Sempre como primeiro script depois de clonar o repositório
+
+---
+
+### `install-docker.sh`
+Instala Docker e Docker Compose para containerização.
+
+```bash
+bash scripts/install-docker.sh
+```
+
+**Instala:**
+- Docker (engine)
+- Docker Compose (orquestração)
+- Docker Buildx (opcional - builds multi-arquitetura)
+- Configura permissões de grupo
+
+**Pós-instalação:**
+```bash
+# Aplique mudanças de grupo
+newgrp docker
+
+# Teste Docker
+docker run hello-world
+```
+
+---
+
+### `install-portainer.sh`
+Instala Portainer - Interface web para gerenciar Docker containers.
+
+```bash
+bash scripts/install-portainer.sh
+```
+
+**Instala:**
+- Portainer Community Edition (gratuito)
+- Acesso HTTP em: `http://localhost:9000`
+- Integração com Docker local
+- Volume persistente para dados
+
+**Recursos:**
+- Dashboard visual
+- Gerenciar containers, imagens, networks
+- Deploy via docker-compose
+- User management
+- Event logs
+
+**Primeira vez:**
+1. Acesse http://localhost:9000
+2. Crie usuário admin
+3. Defina senha
+4. Conecte ao Docker local
+
+---
+
 ### `debloat-manjaro.sh`
 Remove aplicações pré-instaladas do Manjaro: Thunderbird, Audacious, KDE extras, etc.
 
@@ -145,8 +255,12 @@ archlinux-setup/
 ├── SETUP.md                    # Este arquivo - guia completo
 ├── makefile.sh                 # Atalhos para comandos
 ├── scripts/
-│   ├── auto-setup.sh           # ⭐ Campo unificado
+│   ├── check-prerequisites.sh  # ⭐ Verificar pré-requisitos primeiro
+│   ├── auto-setup.sh           # Campo unificado (terminal + config)
 │   ├── install-terminal.sh     # Instala Alacritty + Zsh + P10k
+│   ├── install-lunarvim.sh     # Instala LunarVim IDE
+│   ├── install-docker.sh       # Instala Docker + Docker Compose
+│   ├── install-portainer.sh    # Instala Portainer UI
 │   ├── debloat-manjaro.sh      # Remove bloatware Manjaro
 │   ├── export-packages.sh      # Exporta packages
 │   ├── install-packages.sh     # Instala packages
@@ -162,9 +276,15 @@ archlinux-setup/
 │   ├── .zshrc.example
 │   └── .aliases.example
 └── configs/                    # Configs de aplicações
-    └── alacritty/
-        └── alacritty.toml
+    ├── alacritty/
+    │   └── alacritty.toml
+    ├── lunarvim/
+    │   ├── config.lua
+    │   └── README.md
+    └── portainer/              # Configs Portainer
+        └── docker-compose.yml
 ```
+
 
 ---
 
@@ -218,6 +338,35 @@ sudo bash scripts/install-packages.sh
 
 ---
 
+### Cenário 4: Setup com Docker & Portainer
+
+```bash
+chmod +x scripts/*.sh
+
+# 1. Verificar pré-requisitos (primeiro!)
+bash scripts/check-prerequisites.sh
+
+# 2. Terminal moderno (opcional)
+sudo bash scripts/install-terminal.sh
+
+# 3. LunarVim IDE (opcional)
+bash scripts/install-lunarvim.sh
+
+# 4. Docker & Docker Compose
+bash scripts/install-docker.sh
+newgrp docker                   # Aplicar mudanças de grupo
+
+# 5. Portainer UI (opcional)
+bash scripts/install-portainer.sh
+
+# 6. Acessar Portainer
+# Abra: http://localhost:9000 no navegador
+```
+
+**Resultado:** Terminal moderno + Docker + Portainer UI
+
+---
+
 ## ⚙️ Customizações
 
 ### Powerlevel10k
@@ -258,6 +407,15 @@ BLOATWARE=(
 | AUR helper não instalado | `git clone https://aur.archlinux.org/yay-bin.git && cd yay-bin && makepkg -si` |
 | Terminal lento | Reduza plugins em `~/.zshrc` |
 | Alacritty não encontrado | `sudo pacman -S alacritty` |
+| LunarVim: LSP não aparece | Execute `bash scripts/install-lunarvim.sh` novamente |
+| LunarVim: Keybindings não funcionam | Reinicie Neovim com `:qa` e `nvim` novamente |
+| LunarVim: Formatador não funciona | Cheque instalação com `:Mason` dentro do Neovim |
+| LunarVim: Copilot não ativa | Autentique com `:Copilot auth` |
+| Docker: Comando não reconhecido | Faça logout/login ou execute: `newgrp docker` |
+| Docker: Permissão denied ao usar docker | Adicione usuário ao grupo: `sudo usermod -aG docker $USER` |
+| Docker: Docker daemon não inicia | Inicie com: `sudo systemctl start docker` |
+| Portainer: Não acessa http://localhost:9000 | Aguarde 30s para inicializar, verifique com: `docker ps` |
+| Portainer: Container parou | Reinicie com: `docker start portainer` |
 
 ---
 
@@ -338,8 +496,11 @@ Seu Manjaro/Arch Linux agora tem:
 - ✅ **Zsh + Powerlevel10k** - Shell moderno bonito
 - ✅ **Ferramentas modernas** - fzf, ripgrep, exa, etc
 - ✅ **Configurações sincronizadas** - Entre múltiplos PCs
+- ✅ **LunarVim IDE** - Neovim com suporte Python, Go, C++, Java, Node.js/Next.js (opcional)
+- ✅ **Docker & Docker Compose** - Containerização (opcional)
+- ✅ **Portainer** - Interface web para Docker (opcional)
 
-**Aproveite seu terminal novo! 🎉**
+**Aproveite seu terminal, IDE e plataforma de containerização! 🎉**
 
 ---
 
