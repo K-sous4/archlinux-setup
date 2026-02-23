@@ -32,18 +32,19 @@
 #   - STDOUT/STDERR → $LOG_FILE
 #   - Erros críticos → $ERROR_LOG
 
+# ====================================
+# INICIALIZAR VARIÁVEIS ANTES DE 'set -e'
+# ====================================
+
 # MODO: 'auto' (padrão - instala tudo) ou 'interactive' (pergunta tudo)
 AUTO_MODE="${AUTO_MODE:-auto}"
 INSTALL_ALL="${INSTALL_ALL:-true}"  # Instalar todas opções por padrão
 
 # Variável para rastrear se houve erros
 HAS_ERRORS=false
-ERROR_LOG="$LOG_DIR/errors.log"
-
-set -e
 
 # ====================================
-# CONFIGURAÇÃO DE LOGGING
+# CONFIGURAÇÃO DE LOGGING (INÍCIO ANTECIPADO)
 # ====================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -54,15 +55,31 @@ PROGRESS_FILE="$LOG_DIR/setup-progress.txt"
 ERROR_LOG="$LOG_DIR/errors_${TIMESTAMP}.log"
 
 # Criar diretório de logs e inicializar arquivo
-mkdir -p "$LOG_DIR"
+if ! mkdir -p "$LOG_DIR" 2>/dev/null; then
+    echo "❌ ERRO CRÍTICO: Não foi possível criar diretório de logs: $LOG_DIR"
+    echo "   Verifique permissões e espaço em disco"
+    exit 1
+fi
 
 # Inicializar log com timestamp
-{
+if ! {
     echo "═════════════════════════════════════════════════════════"
     echo "  AUTO SETUP LOG - $(date '+%Y-%m-%d %H:%M:%S')"
     echo "═════════════════════════════════════════════════════════"
     echo ""
-} > "$LOG_FILE"
+    echo "📂 LOG_DIR: $LOG_DIR"
+    echo "📄 LOG_FILE: $LOG_FILE"
+    echo "⚠️  ERROR_LOG: $ERROR_LOG"
+    echo ""
+} > "$LOG_FILE" 2>&1; then
+    echo "❌ ERRO CRÍTICO: Não foi possível criar arquivo de log: $LOG_FILE"
+    exit 1
+fi
+
+echo "✓ Logs inicializados em: $LOG_DIR"
+
+# Agora é seguro usar 'set -e' após logs estarem configurados
+set -e
 
 # Função para logar
 log() {
@@ -229,31 +246,52 @@ run_script() {
     log_step "$step" "$total" "$description" "INICIANDO"
     
     if [[ -f "$script" ]]; then
-        local error_output
-        
         # Log início do subscript
         log "INFO" "► Executando subscript: $script"
+        log "DEBUG" "LOG_FILE=$LOG_FILE, LOG_DIR=$LOG_DIR"
+        
+        local exit_code=0
+        local temp_error="/tmp/script_error_$$.txt"
         
         if [[ "$use_sudo" == true ]]; then
-            # Executar com sudo, logger completo para arquivo + capturar erro
-            if ! error_output=$(export LOG_FILE="$LOG_FILE" LOG_DIR="$LOG_DIR" && \
-                               sudo -E bash "$script" >> "$LOG_FILE" 2>&1); then
+            # Executar com sudo, exportando variáveis, capturando erros
+            export LOG_FILE="$LOG_FILE"
+            export LOG_DIR="$LOG_DIR"
+            
+            if ! sudo -E bash "$script" >> "$LOG_FILE" 2>"$temp_error"; then
+                exit_code=$?
                 log_step "$step" "$total" "$description" "✗ FALHA"
-                log "ERROR" "Subscript falhou: $script (exit code: $?)"
-                store_error "$step" "$description" "$error_output"
-                return 1
+                log "ERROR" "Subscript falhou: $script (exit code: $exit_code)"
+                
+                # Capturar erro se arquivo existir
+                if [[ -f "$temp_error" ]] && [[ -s "$temp_error" ]]; then
+                    local error_output=$(cat "$temp_error")
+                    store_error "$step" "$description" "$error_output"
+                fi
+                rm -f "$temp_error"
+                return $exit_code
             fi
         else
-            # Executar sem sudo, logger completo para arquivo + capturar erro
-            if ! error_output=$(export LOG_FILE="$LOG_FILE" LOG_DIR="$LOG_DIR" && \
-                               bash "$script" >> "$LOG_FILE" 2>&1); then
+            # Executar sem sudo, exportando variáveis, capturando erros
+            export LOG_FILE="$LOG_FILE"
+            export LOG_DIR="$LOG_DIR"
+            
+            if ! bash "$script" >> "$LOG_FILE" 2>"$temp_error"; then
+                exit_code=$?
                 log_step "$step" "$total" "$description" "✗ FALHA"
-                log "ERROR" "Subscript falhou: $script (exit code: $?)"
-                store_error "$step" "$description" "$error_output"
-                return 1
+                log "ERROR" "Subscript falhou: $script (exit code: $exit_code)"
+                
+                # Capturar erro se arquivo existir
+                if [[ -f "$temp_error" ]] && [[ -s "$temp_error" ]]; then
+                    local error_output=$(cat "$temp_error")
+                    store_error "$step" "$description" "$error_output"
+                fi
+                rm -f "$temp_error"
+                return $exit_code
             fi
         fi
         
+        rm -f "$temp_error"
         log_step "$step" "$total" "$description" "✓ CONCLUÍDO"
         log "INFO" "◄ Subscript concluído com sucesso: $script"
         print_success "$description"
@@ -521,6 +559,49 @@ log "INFO" "SETUP FINALIZADO"
 log "INFO" "Conclusão: $(date '+%Y-%m-%d %H:%M:%S')"
 log "INFO" "═════════════════════════════════════════════════════════"
 log "INFO" ""
+
+# Verificar e reportar arquivos de log criados
+echo ""
+echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+echo -e "${BLUE}📂 VERIFICAÇÃO DE LOGS${NC}"
+echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+echo ""
+
+if [[ -d "$LOG_DIR" ]]; then
+    echo -e "${GREEN}✓ Diretório de logs encontrado${NC}"
+    echo -e "  Localização: ${CYAN}$LOG_DIR${NC}"
+    echo ""
+    
+    # Listar arquivos e tamanho
+    echo -e "${YELLOW}📋 Arquivos de log:${NC}"
+    if ls -lh "$LOG_DIR"/* 2>/dev/null | tail -n +2 > /dev/null; then
+        ls -lh "$LOG_DIR"/* 2>/dev/null | awk '{print "  " $9 " (" $5 ")"}'
+    else
+        echo "  ❌ Nenhum arquivo de log encontrado!"
+    fi
+    echo ""
+    
+    # Verificar tamanho total
+    local log_size=$(du -sh "$LOG_DIR" 2>/dev/null | awk '{print $1}')
+    echo -e "${YELLOW}💾 Tamanho total:${NC} $log_size"
+    echo ""
+    
+    # Mostrar quantidade de linhas no arquivo principal
+    if [[ -f "$LOG_FILE" ]]; then
+        local line_count=$(wc -l < "$LOG_FILE" 2>/dev/null || echo "0")
+        echo -e "${YELLOW}📝 Linhas no log principal:${NC} $line_count linhas"
+    fi
+else
+    echo -e "${RED}✗ ERRO: Diretório de logs NÃO FOI CRIADO${NC}"
+    echo -e "  Localização esperada: ${CYAN}$LOG_DIR${NC}"
+    echo -e "  Verifique permissões de arquivo!"
+fi
+
+echo ""
+echo -e "${BLUE}Para visualizar os logs:${NC}"
+echo -e "  ${CYAN}cat $LOG_FILE${NC}"
+echo -e "  ${CYAN}tail -f $LOG_FILE${NC} (monitorar em tempo real)"
+echo ""
 
 # Mostrar resumo de erros (se houver)
 show_error_summary

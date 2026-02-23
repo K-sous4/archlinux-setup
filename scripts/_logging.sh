@@ -26,13 +26,22 @@ if [[ -z "$LOG_FILE" ]]; then
         echo "[$timestamp] [$level] $message"
     }
 else
-    # Logger completo que grava em arquivo
+    # Logger completo que grava em arquivo com flushing imediato
     log() {
         local level=$1
         shift
         local message="$@"
         local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-        echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
+        
+        # Escrever em stdout E arquivo, com flushing imediato
+        {
+            echo "[$timestamp] [$level] $message"
+            # Força flush dos buffers
+            if [[ -w "$LOG_FILE" ]]; then
+                echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
+                sync "$LOG_FILE" 2>/dev/null || true
+            fi
+        } >&1
     }
 fi
 
@@ -46,22 +55,22 @@ NC='\033[0m'
 
 # Funções auxiliares com cores
 log_success() {
-    echo -e "${GREEN}✓${NC} $*"
+    echo -e "${GREEN}✓${NC} $*" >&2
     log "SUCCESS" "$*"
 }
 
 log_error() {
-    echo -e "${RED}✗${NC} $*"
+    echo -e "${RED}✗${NC} $*" >&2
     log "ERROR" "$*"
 }
 
 log_warning() {
-    echo -e "${YELLOW}⚠${NC} $*"
+    echo -e "${YELLOW}⚠${NC} $*" >&2
     log "WARNING" "$*"
 }
 
 log_info() {
-    echo -e "${BLUE}ℹ${NC} $*"
+    echo -e "${BLUE}ℹ${NC} $*" >&2
     log "INFO" "$*"
 }
 
@@ -74,7 +83,7 @@ run_command() {
     log_info "Executando: $description"
     log "DEBUG" "Comando: $command"
     
-    if eval "$command" >> "$LOG_FILE" 2>&1; then
+    if eval "$command" 2>&1 | tee -a "$LOG_FILE"; then
         log_success "$description completado"
         return 0
     else
